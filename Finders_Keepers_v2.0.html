@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finders Keepers v2.0 - SorSU Bulan Campus Lost & Found Hub</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #050711 0%, #090b18 40%, #110d22 70%, #1a0822 100%);
+            --panel-bg: rgba(13, 15, 30, 0.55);
+            --panel-border: rgba(255, 255, 255, 0.07);
+            --panel-glow: rgba(168, 85, 247, 0.04);
+            --input-bg: rgba(5, 6, 14, 0.75);
+            --input-border: rgba(255, 255, 255, 0.12);
+
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --status-active: #eab308;
+            --status-returned: #10b981;
+            --type-lost: #f87171;
+            --type-found: #60a5fa;
+
+            --sidebar-width: 270px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* --- LAYOUT SIDEBAR ARCHITECTURE --- */
+        aside {
+            width: var(--sidebar-width);
+            background: rgba(8, 9, 19, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-right: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            padding: 2.2rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .sidebar-brand h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-brand p {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            margin-top: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-menu {
+            padding: 1.5rem 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            flex: 1;
+        }
+
+        button.nav-item {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 0.8rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-badge {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-purple);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.1rem 0.4rem;
+            border-radius: 6px;
+            border: 1px solid rgba(168, 85, 247, 0.25);
+        }
+
+        button.nav-item:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+            transform: translateX(4px);
+        }
+
+        button.nav-item.active {
+            color: var(--text-primary);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(59, 130, 246, 0.08) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            box-shadow: 0 4px 24px rgba(168, 85, 247, 0.08);
+        }
+
+        .sidebar-footer {
+            padding: 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* --- MAIN VIEWPORT FRAME --- */
+        main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 2.5rem;
+            max-width: 1400px;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding-bottom: 1.5rem;
+        }
+
+        .view-title h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .view-title p {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            margin-top: 0.25rem;
+        }
+
+        .role-selector {
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.3rem;
+            border-radius: 10px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .role-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.45rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-btn.active {
+            background: var(--accent-purple);
+            color: white;
+            box-shadow: 0 2px 10px rgba(168, 85, 247, 0.4);
+        }
+
+        /* --- WORKSPACE CORE SECTIONS --- */
+        section {
+            display: none;
+            animation: viewFade 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        section.active {
+            display: block;
+        }
+
+        @keyframes viewFade {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- COMPONENT GLASS CARDS --- */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .glass-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--panel-border);
+            border-radius: 18px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+            transition: transform 0.25s, border-color 0.25s;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(168, 85, 247, 0.25);
+        }
+
+        .metric-card h3 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 0.4rem;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-card p {
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .metric-icon {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            font-size: 1.2rem;
+            opacity: 0.5;
+        }
+
+        /* --- DASHBOARD TRIPLE COLUMN ARCHITECTURE --- */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 4fr 3fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feed-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 1.25rem;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            font-size: 0.88rem;
+        }
+
+        .activity-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .activity-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        /* --- VISUALIZATION GRAPHICS SYSTEM --- */
+        .chart-track-bar {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            height: 14px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 0.5rem;
+            margin-bottom: 0.85rem;
+            display: flex;
+        }
+
+        .chart-segment {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .legend-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .legend-node {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* --- SEARCH FILTER ARCHITECTURE --- */
+        .search-panel {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: 1.5fr repeat(4, 1fr) auto;
+            gap: 0.85rem;
+            align-items: flex-end;
+        }
+
+        /* --- PRODUCTIVE DIRECTORY GRID MATRIX --- */
+        .directory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .asset-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s;
+        }
+
+        .asset-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .card-banner {
+            height: 175px;
+            background: #090b16;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .card-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.75;
+        }
+
+        .card-tag {
+            position: absolute;
+            top: 0.85rem;
+            left: 0.85rem;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .card-body {
+            padding: 1.25rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .card-header-row h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .card-text {
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-metadata {
+            margin-top: auto;
+            padding-top: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .card-metadata span strong {
+            color: var(--text-secondary);
+        }
+
+        /* --- CONTROL INFRASTRUCTURE INPUTS --- */
+        .form-layout-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .input-wrapper label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .input-wrapper small {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: -0.2rem;
+            line-height: 1.3;
+        }
+
+        input, select, textarea {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+        }
+
+        /* --- IMAGE PREVIEW INTERFACE STYLES --- */
+        .preview-box {
+            width: 100%;
+            max-width: 280px;
+            height: 160px;
+            border: 2px dashed var(--input-border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- UI UTILITY INTERFACES --- */
+        .btn-prime {
+            background: linear-gradient(135deg, var(--accent-purple) 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-prime:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-sec {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            border: 1px solid var(--panel-border);
+            padding: 0.75rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-sec:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .pill {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            letter-spacing: 0.3px;
+        }
+
+        .pill-lost { background: rgba(248, 113, 113, 0.12); color: var(--type-lost); border: 1px solid rgba(248, 113, 113, 0.2); }
+        .pill-found { background: rgba(96, 165, 250, 0.12); color: var(--type-found); border: 1px solid rgba(96, 165, 250, 0.2); }
+        .pill-active { background: rgba(234, 179, 8, 0.12); color: var(--status-active); border: 1px solid rgba(234, 179, 8, 0.2); }
+        .pill-returned { background: rgba(16, 185, 129, 0.12); color: var(--status-returned); border: 1px solid rgba(16, 185, 129, 0.2); }
+
+        /* --- TOAST NOTIFICATIONS HUB --- */
+        #toast-space {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast-banner {
+            background: rgba(10, 12, 26, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--accent-purple);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            font-size: 0.88rem;
+            animation: slideIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+        }
+
+        @keyframes slideIn { from { transform: translateX(110%); } to { transform: translateX(0); } }
+
+        .null-indicator {
+            text-align: center;
+            padding: 3.5rem 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            background: rgba(255,255,255,0.01);
+            border: 1px dashed rgba(255,255,255,0.05);
+            border-radius: 14px;
+        }
+
+        .null-icon {
+            font-size: 2.2rem;
+            filter: grayscale(0.3);
+        }
+
+        /* --- WORKFLOW PROGRESSION TRACK --- */
+        .workflow-track {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.25rem;
+            margin-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .workflow-step {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .workflow-step.completed {
+            color: var(--accent-purple);
+        }
+        .workflow-step.active-now {
+            color: var(--status-active);
+            font-weight: 700;
+        }
+        .workflow-step.returned-now {
+            color: var(--status-returned);
+            font-weight: 700;
+        }
+
+        /* --- MATCH VISUALIZER ENGINE STRUCTS --- */
+        .match-workspace-container {
+            background: rgba(13, 15, 30, 0.4);
+            border: 1px solid var(--panel-border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .match-meta-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .match-confidence-badge {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #f3e8ff;
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .match-attributes-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .match-attr-pill {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+        }
+        .match-attr-pill.matched {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.25);
+            color: #d1fae5;
+        }
+
+        .match-side-by-side {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .match-pane-side {
+            background: rgba(5, 6, 14, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        /* --- MODAL SYSTEM OVERLAYS --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 4, 10, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1; pointer-events: auto;
+        }
+        .verification-window {
+            background: #0b0d19;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 20px;
+            width: 92%; max-width: 520px;
+            padding: 2rem;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+            transform: scale(0.96);
+            transition: transform 0.25s ease;
+        }
+        .modal-overlay.open .verification-window {
+            transform: scale(1);
+        }
+
+        .interactive-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            margin-bottom: 0.6rem;
+        }
+
+        .location-metric-pills {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .loc-pill {
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div class="sidebar-brand">
+            <h1>🔍 Finders Keepers</h1>
+            <p>SorSU Bulan Campus</p>
+            <p style="font-size:0.58rem; color:var(--accent-purple); margin-top:0.1rem;">Campus Lost & Found Hub</p>
+        </div>
+        <div class="sidebar-menu">
+            <button class="nav-item active" onclick="Router.navigate('dashboardView', this)">
+                <span class="nav-left">📊 Dashboard</span>
+            </button>
+            <button class="nav-item" onclick="Router.navigate('directoryView', this)">
+                <span class="nav-left">🔍 Search Items</span>
+            </button>
+            <button class="nav-item" id="nav-report-action" onclick="Router.navigate('reportFormView', this)">
+                <span class="nav-left">➕ Submit Report</span>
+            </button>
+            <button class="nav-item" id="nav-student-hub" onclick="Router.navigate('studentWorkspaceView', this)">
+                <span class="nav-left">📁 My Reports</span>
+                <span class="nav-badge" id="badge-student-count">0</span>
+            </button>
+            <button class="nav-item" id="nav-match-center" onclick="Router.navigate('matchCenterView', this)">
+                <span class="nav-left">⚡ Potential Matches</span>
+                <span class="nav-badge" id="badge-match-count" style="background:rgba(234,179,8,0.15); color:var(--status-active);">0</span>
+            </button>
+            <button class="nav-item" id="nav-location-nodes" onclick="Router.navigate('locationNodeView', this)">
+                <span class="nav-left">📍 Campus Locations</span>
+            </button>
+            <button class="nav-item" id="nav-analytics-summary" onclick="Router.navigate('analyticsPlatformView', this)">
+                <span class="nav-left">📈 Recovery Statistics</span>
+            </button>
+        </div>
+        <div class="sidebar-footer">
+            CC103 Object-Oriented Programming<br>
+            Finders Keepers v2.0
+        </div>
+    </aside>
+
+    <main>
+        <div class="view-header">
+            <div class="view-title">
+                <h2 id="view-title-node">Dashboard</h2>
+                <p id="view-desc-node">Monitor lost and found activity across the campus.</p>
+            </div>
+            <div class="role-selector">
+                <button class="role-btn active" onclick="UserSession.setRole('Admin', this)">Admin</button>
+                <button class="role-btn" onclick="UserSession.setRole('Staff', this)">Staff</button>
+                <button class="role-btn" onclick="UserSession.setRole('Student', this)">Student</button>
+            </div>
+        </div>
+
+        <section id="dashboardView" class="active">
+            <div class="metrics-grid">
+                <div class="glass-card metric-card" style="border-bottom: 3px solid var(--type-lost);">
+                    <span class="metric-icon">🚨</span>
+                    <h3 id="meta-count-lost">0</h3>
+                    <p>Lost Items</p>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 3px solid var(--type-found);">
+                    <span class="metric-icon">📦</span>
+                    <h3 id="meta-count-found">0</h3>
+                    <p>Found Items</p>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 3px solid var(--status-active);">
+                    <span class="metric-icon">⚡</span>
+                    <h3 id="meta-count-matches">0</h3>
+                    <p>Potential Matches</p>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 3px solid var(--status-returned);">
+                    <span class="metric-icon">🤝</span>
+                    <h3 id="meta-count-rate">0%</h3>
+                    <p>Successfully Returned</p>
+                </div>
+            </div>
+
+            <div class="dashboard-layout">
+                <div class="feed-container" style="gap:1.5rem;">
+                    <div class="glass-card">
+                        <h3 style="font-size:1.05rem; margin-bottom:1.2rem; display:flex; align-items:center; gap:0.5rem;">🔔 Recent Activity Feed</h3>
+                        <div class="feed-container" id="dashboard-activity-feed"></div>
+                    </div>
+                    <div class="glass-card">
+                        <h3 style="font-size:1.05rem; margin-bottom:1.2rem; display:flex; align-items:center; gap:0.5rem;">✅ Recently Returned Items</h3>
+                        <div class="feed-container" id="dashboard-returned-feed"></div>
+                    </div>
+                </div>
+                <div class="glass-card" style="display:flex; flex-direction:column; justify-content:space-between; gap:1.5rem;">
+                    <div>
+                        <h3>Most Common Locations</h3>
+                        <p style="color:var(--text-secondary); font-size:0.8rem; margin-bottom:1rem;">Campus areas with highest recorded incidents</p>
+                        <div id="dashboard-hotspot-chart"></div>
+                    </div>
+                    <div style="border-top:1px solid rgba(255,255,255,0.04); padding-top:1rem; font-size:0.75rem; color:var(--text-muted); text-align:center;">
+                        Storage Engine: LocalStorage Synchronized Active
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="directoryView">
+            <div class="search-panel">
+                <div class="input-wrapper">
+                    <label>Keyword Search</label>
+                    <input type="text" id="search-query" oninput="UI.renderDirectory()" placeholder="Title, features, name...">
+                </div>
+                <div class="input-wrapper">
+                    <label>Type</label>
+                    <select id="search-type" onchange="UI.renderDirectory()">
+                        <option value="ALL">All Items</option>
+                        <option value="Lost">Lost Records</option>
+                        <option value="Found">Found Storage</option>
+                    </select>
+                </div>
+                <div class="input-wrapper">
+                    <label>Category</label>
+                    <select id="search-category" onchange="UI.renderDirectory()">
+                        <option value="ALL">All Categories</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Documents">Documents & IDs</option>
+                        <option value="Keys">Keys</option>
+                        <option value="Personal Effects">Personal Effects</option>
+                    </select>
+                </div>
+                <div class="input-wrapper">
+                    <label>Location</label>
+                    <select id="search-location" onchange="UI.renderDirectory()">
+                        <option value="ALL">All Locations</option>
+                    </select>
+                </div>
+                <div class="input-wrapper">
+                    <label>Date Range</label>
+                    <input type="date" id="search-date" onchange="UI.renderDirectory()">
+                </div>
+                <button class="btn-prime" style="height:42px; padding:0 1.25rem;" onclick="UI.resetDirectoryFilters()">Reset</button>
+            </div>
+            <div id="directory-output-matrix" class="directory-grid"></div>
+        </section>
+
+        <section id="reportFormView">
+            <div class="glass-card" style="max-width:900px; margin:0 auto;">
+                <div class="form-layout-row">
+                    <div class="input-wrapper">
+                        <label for="form-type">Report Type</label>
+                        <select id="form-type">
+                            <option value="Lost">Lost Item (I missing something)</option>
+                            <option value="Found">Found Item (I found something)</option>
+                        </select>
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="form-name">Item Name / Title</label>
+                        <input type="text" id="form-name" placeholder="e.g. Matte Black Hydro Flask" required>
+                    </div>
+                </div>
+                <div class="form-layout-row">
+                    <div class="input-wrapper">
+                        <label for="form-location">Location Found/Lost</label>
+                        <select id="form-location"></select>
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="form-owner">Your Name (Reporter)</label>
+                        <input type="text" id="form-owner" placeholder="Enter full name" required>
+                    </div>
+                </div>
+                <div class="form-layout-row">
+                    <div class="input-wrapper">
+                        <label for="form-category">Category</label>
+                        <select id="form-category">
+                            <option value="Electronics">Electronics</option>
+                            <option value="Documents">Documents & ID Cards</option>
+                            <option value="Keys">Keys</option>
+                            <option value="Personal Effects">Personal Effects</option>
+                        </select>
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="form-date">Date of Incident</label>
+                        <input type="date" id="form-date" required>
+                    </div>
+                </div>
+                <div class="form-layout-row">
+                    <div class="input-wrapper">
+                        <label for="form-photo">Upload Item Image</label>
+                        <input type="file" id="form-photo" accept="image/*" onchange="UI.handleImageFilePreview(event)">
+                        <div class="preview-box" id="form-image-preview-zone">
+                            <span>No photo selected</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-wrapper" style="margin-bottom:1.5rem;">
+                    <label for="form-desc">Item Description & Distinct Features</label>
+                    <textarea id="form-desc" rows="4" placeholder="Specify colors, brand name, stickers, or unique scratches to help matching features..."></textarea>
+                    <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">
+                        <strong>Examples:</strong> Black Samsung phone case, Student ID sticker on back, deep scratch near charging port.
+                    </small>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:1rem;">
+                    <button class="btn-prime" onclick="UI.handleFormSubmission()">Submit Report</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="studentWorkspaceView">
+            <div style="margin-bottom:1.5rem;">
+                <h3 style="font-size:1.1rem; margin-bottom:0.3rem;">My Reported Items</h3>
+                <p style="color:var(--text-secondary); font-size:0.85rem;">Track and review all items you have filed into the campus database.</p>
+            </div>
+            <div id="student-workspace-matrix" style="display:flex; flex-direction:column; gap:1rem;"></div>
+        </section>
+
+        <section id="matchCenterView">
+            <div class="glass-card" style="margin-bottom:1.5rem; border-left:4px solid var(--accent-purple);">
+                <h4>Potential Item Matches</h4>
+                <p style="color:var(--text-secondary); font-size:0.85rem;">Review automatic matching pairs detected between reported lost and found items.</p>
+            </div>
+            <div id="match-center-output-matrix" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
+        </section>
+
+        <section id="locationNodeView">
+            <div style="display:grid; grid-template-columns: 1fr 2fr; gap:2rem; align-items:flex-start;">
+                <div class="glass-card">
+                    <h3>Register Campus Location</h3>
+                    <div class="input-wrapper" style="margin-bottom:1.25rem;">
+                        <label for="loc-input-node">Location / Room Name</label>
+                        <input type="text" id="loc-input-node" placeholder="e.g. IT Laboratory 3">
+                    </div>
+                    <button class="btn-prime" style="width:100%;" onclick="UI.handleCreateLocationNode()">Add Location</button>
+                </div>
+                <div class="glass-card">
+                    <h3>Registered Locations</h3>
+                    <p style="color:var(--text-secondary); font-size:0.8rem; margin-bottom:1.2rem;">View all active tracking areas and rooms across the campus.</p>
+                    <div id="location-nodes-list-output"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="analyticsPlatformView">
+            <div class="metrics-grid" id="analytics-extended-row">
+                <div class="glass-card metric-card" style="border-bottom: 3px solid #cbd5e1;">
+                    <h3 id="stat-total-lost">0</h3>
+                    <p>Total Lost Items</p>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 3px solid var(--type-found);">
+                    <h3 id="stat-total-found">0</h3>
+                    <p>Total Found Items</p>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 3px solid var(--status-returned);">
+                    <h3 id="stat-total-returned">0</h3>
+                    <p>Returned Items</p>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 3px solid var(--accent-purple);">
+                    <h3 id="stat-recovery-rate">0%</h3>
+                    <p>Recovery Rate</p>
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div class="glass-card">
+                    <h3>Recovery Statistics</h3>
+                    <div style="padding:1rem 0;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.35rem; color:var(--text-secondary);">
+                            <span>Resolution Share Breakdown</span>
+                            <span style="font-weight:600; color:var(--status-returned);">Target Performance Maintained</span>
+                        </div>
+                        <div class="chart-track-bar" id="analytics-fulfillment-bar"></div>
+                        <div class="legend-row" id="analytics-fulfillment-legend"></div>
+                    </div>
+                </div>
+                <div class="glass-card">
+                    <h3>Items by Category</h3>
+                    <div id="analytics-category-chart"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="verificationModal">
+        <div class="verification-window">
+            <h3 style="margin-bottom:0.4rem; color:#fff;">📋 Handover Verification</h3>
+            <p style="color:var(--text-secondary); font-size:0.82rem; margin-bottom:1.5rem;">Verify the claimant's identity and record handover details before releasing the item.</p>
+            <input type="hidden" id="modal-target-id">
+            <div class="input-wrapper" style="margin-bottom:1rem;">
+                <label>Item to Handover</label>
+                <input type="text" id="modal-item-title" readonly style="opacity:0.65; background:rgba(0,0,0,0.35);">
+            </div>
+            <div class="input-wrapper" style="margin-bottom:1rem;">
+                <label for="modal-officer">Verifying Officer Name</label>
+                <input type="text" id="modal-officer" placeholder="Enter Staff or Officer duty name">
+            </div>
+            <div class="input-wrapper" style="margin-bottom:1.5rem;">
+                <label for="modal-notes">Handover Validation Notes</label>
+                <textarea id="modal-notes" rows="3" placeholder="Verify claimant identity, student card matching signatures, or proof of ownership description..."></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                <button class="btn-sec" onclick="UI.closeVerificationModal()">Cancel</button>
+                <button class="btn-prime" style="background:var(--status-returned);" onclick="UI.executeVerifiedTransactionWithConfirmation()">Confirm Release</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-space"></div>
+
+    <script>
+        /* ==========================================================================
+           CORE DOMAIN LAYER CLASSES (CC103 COMPLIANT OBJECT DESIGN)
+           ========================================================================== */
+        class BaseItem {
+            constructor({ id, type, name, desc, location, category, owner, status = "Active", date = "", image = "", verificationLog = null }) {
+                if (this.constructor === BaseItem) throw new Error("Polymorphism Guard: BaseItem class cannot be instantiated directly.");
+                this.id = id || Date.now() + Math.floor(Math.random() * 1000);
+                this.type = type;
+                this.name = name;
+                this.desc = desc || "No description provided.";
+                this.location = location;
+                this.category = category;
+                this.owner = owner;
+                this.status = status;
+                this.date = date || new Date().toISOString().split('T')[0];
+                this.image = image || "https://picsum.photos/600/400";
+                this.verificationLog = verificationLog;
+            }
+
+            archive(officer, notes) {
+                this.status = "Returned";
+                this.verificationLog = { officer: officer, notes: notes, timestamp: new Date().toLocaleDateString() };
+            }
+        }
+
+        class LostItem extends BaseItem {
+            constructor(data) { super({ ...data, type: "Lost" }); }
+        }
+
+        class FoundItem extends BaseItem {
+            constructor(data) { super({ ...data, type: "Found" }); }
+        }
+
+        class ItemFactory {
+            static create(data) {
+                if (data.type === "Lost") return new LostItem(data);
+                if (data.type === "Found") return new FoundItem(data);
+                throw new Error(`Factory Exception Error Mapping Type: ${data.type}`);
+            }
+        }
+
+        /* ==========================================================================
+           SYSTEM BUSINESS SERVICES ENGINES
+           ========================================================================== */
+        const CoreRegistry = {
+            items: [],
+            locations: ["IT Laboratory 1", "SorSU Library", "Student Pavilion", "Gymnasium", "SorSU Food Court"],
+
+            syncLoad() {
+                const storedItems = localStorage.getItem("sor_su_finders_keepers_items");
+                const storedLocs = localStorage.getItem("sor_su_finders_keepers_locs");
+
+                if (storedItems) {
+                    try {
+                        const parsed = JSON.parse(storedItems);
+                        this.items = parsed.map(obj => ItemFactory.create(obj));
+                    } catch (e) {
+                        this.loadSeeds();
+                    }
+                } else {
+                    this.loadSeeds();
+                }
+
+                if (storedLocs) {
+                    try { this.locations = JSON.parse(storedLocs); } catch(e) {}
+                }
+                this.syncSave();
+            },
+
+            syncSave() {
+                localStorage.setItem("sor_su_finders_keepers_items", JSON.stringify(this.items));
+                localStorage.setItem("sor_su_finders_keepers_locs", JSON.stringify(this.locations));
+            },
+
+            // DEMONSTRATION SEED DATA: Loaded context items to display during panel assessment evaluations.
+            loadSeeds() {
+                const seeds = [
+                    { name: "Lenovo ThinkPad Laptop", desc: "Black body with a DevOps sticker on the front lid.", location: "IT Laboratory 1", category: "Electronics", owner: "Fritz Luke Villas", type: "Lost", date: "2026-06-01", image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=500" },
+                    { name: "Brown Leather Wallet", desc: "Contains a student ID card and room door keys.", location: "SorSU Library", category: "Personal Effects", owner: "Jhoan Derit", type: "Found", date: "2026-06-02", image: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=500" },
+                    { name: "Casio Scientific Calculator", desc: "Model fx-991EX with owner initials carved on the back panel.", location: "Gymnasium", category: "Electronics", owner: "Mark Almirol", type: "Lost", date: "2026-06-04", image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=500" }
+                ];
+                this.items = seeds.map(s => ItemFactory.create(s));
+            },
+
+            addItem(data) {
+                const instance = ItemFactory.create(data);
+                this.items.unshift(instance);
+                this.syncSave();
+                return instance;
+            }
+        };
+
+        const MatchEngine = {
+            calculateMatches() {
+                const lost = CoreRegistry.items.filter(i => i.type === "Lost" && i.status === "Active");
+                const found = CoreRegistry.items.filter(i => i.type === "Found" && i.status === "Active");
+                const potentialMatches = [];
+
+                lost.forEach(lItem => {
+                    found.forEach(fItem => {
+                        let score = 35; // Shared classification baseline filter threshold
+                        let matchesDesc = false;
+
+                        if (lItem.category === fItem.category) {
+                            if (lItem.name.toLowerCase().trim() === fItem.name.toLowerCase().trim()) score += 25;
+                            if (lItem.location === fItem.location) score += 20;
+
+                            const lKeywords = lItem.desc.toLowerCase().replace(/[^a-z0-match\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+                            const fKeywords = fItem.desc.toLowerCase().replace(/[^a-z0-match\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+
+                            const matches = lKeywords.filter(w => fKeywords.includes(w));
+                            if (matches.length > 0) {
+                                score += 20;
+                                matchesDesc = true;
+                            }
+
+                            if (score >= 50) {
+                                potentialMatches.push({
+                                    lostItem: lItem,
+                                    foundItem: fItem,
+                                    score: Math.min(score, 100),
+                                    matchedLocation: lItem.location === fItem.location,
+                                    matchedDescription: matchesDesc
+                                });
+                            }
+                        }
+                    });
+                });
+
+                return potentialMatches.sort((a, b) => b.score - a.score);
+            }
+        };
+
+        const UserSession = {
+            currentRole: "Admin",
+            setRole(role, element) {
+                this.currentRole = role;
+                document.querySelectorAll(".role-btn").forEach(b => b.classList.remove("active"));
+                if(element) element.classList.add("active");
+                UI.showToast(`Switched view mode to: <strong>${role}</strong>`);
+                UI.refreshApplicationState();
+            }
+        };
+
+        const Router = {
+            navigate(viewId, navElement) {
+                document.querySelectorAll("main section").forEach(s => s.classList.remove("active"));
+                const targetSection = document.getElementById(viewId);
+                if(targetSection) targetSection.classList.add("active");
+
+                document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+                if(navElement) navElement.classList.add("active");
+
+                const titleNode = document.getElementById("view-title-node");
+                const descNode = document.getElementById("view-desc-node");
+
+                const metadata = {
+                    dashboardView: ["Dashboard", "Monitor lost and found activity across the campus."],
+                    directoryView: ["Search Items", "Browse and filter lost and found items recorded on campus."],
+                    reportFormView: ["Submit Item Report", "File a formal missing or recovered item entry to the database."],
+                    studentWorkspaceView: ["My Reported Items", "Review all item profiles you have logged into the system."],
+                    matchCenterView: ["Potential Matches", "Find possible matches between lost and found items based on shared details."],
+                    locationNodeView: ["Campus Locations", "Manage locations where items are commonly reported missing or found."],
+                    analyticsPlatformView: ["Recovery Statistics", "View clear visual breakdowns of category distributions and data counts."]
+                };
+
+                if (metadata[viewId]) {
+                    titleNode.textContent = metadata[viewId][0];
+                    descNode.textContent = metadata[viewId][1];
+                }
+                UI.refreshApplicationState();
+            }
+        };
+
+        /* ==========================================================================
+           UI RENDERING AND CONTROLLER MANAGEMENT LAYER
+           ========================================================================== */
+        const UI = {
+            currentUploadedImageBase64: "",
+
+            refreshApplicationState() {
+                this.updateGlobalMetricsCounters();
+                this.renderDashboardFeedsAndCharts();
+                this.renderDirectory();
+                this.renderStudentLedger();
+                this.renderMatchCenter();
+                this.renderLocationWorkspaceCenter();
+                this.populateLocationSelectionDropdowns();
+            },
+
+            updateGlobalMetricsCounters() {
+                const active = CoreRegistry.items.filter(i => i.status === "Active");
+                const lostCount = active.filter(i => i.type === "Lost").length;
+                const foundCount = active.filter(i => i.type === "Found").length;
+
+                const matches = MatchEngine.calculateMatches();
+                const totalCount = CoreRegistry.items.length;
+                const returnedCount = CoreRegistry.items.filter(i => i.status === "Returned").length;
+                const rate = totalCount === 0 ? 0 : Math.round((returnedCount / totalCount) * 100);
+
+                document.getElementById("meta-count-lost").textContent = lostCount;
+                document.getElementById("meta-count-found").textContent = foundCount;
+                document.getElementById("meta-count-matches").textContent = matches.length;
+                document.getElementById("meta-count-rate").textContent = `${rate}%`;
+
+                document.getElementById("badge-student-count").textContent = CoreRegistry.items.length;
+                document.getElementById("badge-match-count").textContent = matches.length;
+
+                if(document.getElementById("stat-total-lost")) {
+                    document.getElementById("stat-total-lost").textContent = CoreRegistry.items.filter(i => i.type === "Lost").length;
+                    document.getElementById("stat-total-found").textContent = CoreRegistry.items.filter(i => i.type === "Found").length;
+                    document.getElementById("stat-total-returned").textContent = returnedCount;
+                    document.getElementById("stat-recovery-rate").textContent = `${rate}%`;
+                }
+            },
+
+            handleImageFilePreview(event) {
+                const file = event.target.files[0];
+                const previewZone = document.getElementById("form-image-preview-zone");
+
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        UI.currentUploadedImageBase64 = e.target.result;
+                        previewZone.innerHTML = `<img src="${e.target.result}" alt="Preview Item Frame">`;
+                        UI.showToast("📸 Image attached successfully.");
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    UI.currentUploadedImageBase64 = "";
+                    previewZone.innerHTML = `<span>No photo selected</span>`;
+                }
+            },
+
+            // HCI CONFIRMATION GUARD: Dialog layout prevents accidental clicks before permanent file edits occur
+            executeVerifiedTransactionWithConfirmation() {
+                const title = document.getElementById("modal-item-title").value;
+                const officer = document.getElementById("modal-officer").value.trim();
+                const notes = document.getElementById("modal-notes").value.trim();
+
+                if(!officer || !notes) {
+                    alert("Please fill in both the Verifying Officer Name and Handover Validation Notes before executing release.");
+                    return;
+                }
+
+                const userConfirmed = confirm(`Are you sure you want to mark "${title}" as returned?\n\nThis will confirm the handover process and close this item's active tracking tracking.`);
+
+                if (userConfirmed) {
+                    this.executeVerifiedTransaction(officer, notes);
+                } else {
+                    this.showToast("❌ Handover release canceled.");
+                }
+            },
+
+            executeVerifiedTransaction(officer, notes) {
+                const id = parseInt(document.getElementById("modal-target-id").value);
+
+                const targetItem = CoreRegistry.items.find(i => i.id === id);
+                if(targetItem) {
+                    targetItem.archive(officer, notes);
+                    CoreRegistry.syncSave();
+                    // HCI FIX 2B: Removed technical jargon from notification message text string
+                    this.showToast("🤝 Item successfully returned and recorded.");
+                    this.closeVerificationModal();
+                    this.refreshApplicationState();
+                }
+            },
+
+            handleFormSubmission() {
+                const name = document.getElementById("form-name").value.trim();
+                const type = document.getElementById("form-type").value;
+                const loc = document.getElementById("form-location").value;
+                const owner = document.getElementById("form-owner").value.trim();
+                const category = document.getElementById("form-category").value;
+                const date = document.getElementById("form-date").value;
+                const desc = document.getElementById("form-desc").value.trim();
+
+                if(!name || !owner || !date) {
+                    this.showToast("⚠️ Please fill in all required properties.");
+                    return;
+                }
+
+                CoreRegistry.addItem({
+                    name: name,
+                    type: type,
+                    location: loc,
+                    owner: owner,
+                    category: category,
+                    date: date,
+                    desc: desc,
+                    image: UI.currentUploadedImageBase64 || null
+                });
+
+                // HCI FIX 2A: Removed technical engineering references from success notification string
+                this.showToast("🎉 Item report submitted successfully.");
+
+                document.getElementById("form-name").value = "";
+                document.getElementById("form-owner").value = "";
+                document.getElementById("form-desc").value = "";
+                document.getElementById("form-image-preview-zone").innerHTML = `<span>No photo selected</span>`;
+                UI.currentUploadedImageBase64 = "";
+
+                Router.navigate("directoryView", document.querySelector('.sidebar-menu button:nth-child(2)'));
+            },
+
+            renderDashboardFeedsAndCharts() {
+                const feed = document.getElementById("dashboard-activity-feed");
+                const returnedFeed = document.getElementById("dashboard-returned-feed");
+
+                const active = CoreRegistry.items.filter(i => i.status === "Active").slice(0, 4);
+                const archived = CoreRegistry.items.filter(i => i.status === "Returned").slice(0, 4);
+
+                feed.innerHTML = active.length === 0 ? `<div class="activity-item" style="color:var(--text-muted)">No recent items logged</div>` : "";
+                active.forEach(item => {
+                    const indicator = item.type === "Lost" ? "var(--type-lost)" : "var(--type-found)";
+                    feed.innerHTML += `
+                        <div class="activity-item">
+                            <div class="activity-meta">
+                                <div class="activity-indicator" style="background:${indicator}"></div>
+                                <span><strong>${this.escape(item.name)}</strong> (${item.category})</span>
+                            </div>
+                            <span class="pill pill-${item.type.toLowerCase()}">${item.type}</span>
+                        </div>`;
+                });
+
+                returnedFeed.innerHTML = archived.length === 0 ? `<div class="activity-item" style="color:var(--text-muted)">No item handovers recorded yet</div>` : "";
+                archived.forEach(item => {
+                    returnedFeed.innerHTML += `
+                        <div class="activity-item">
+                            <div class="activity-meta">
+                                <span>🤝 <strong>${this.escape(item.name)}</strong> returned to owner</span>
+                            </div>
+                            <span class="pill pill-returned" style="font-size:0.6rem;">Archived</span>
+                        </div>`;
+                });
+
+                this.drawHotspotCharts();
+            },
+
+            drawHotspotCharts() {
+                const chartBox = document.getElementById("dashboard-hotspot-chart");
+                if(!chartBox) return;
+                chartBox.innerHTML = "";
+
+                const metrics = {};
+                CoreRegistry.locations.forEach(l => metrics[l] = 0);
+                CoreRegistry.items.forEach(i => { if(metrics[i.location] !== undefined) metrics[i.location]++; });
+
+                const sorted = Object.entries(metrics).sort((a,b) => b[1] - a[1]).slice(0, 4);
+                const maxVal = Math.max(...sorted.map(s => s[1]), 1);
+
+                sorted.forEach(([loc, val]) => {
+                    const pct = Math.round((val / maxVal) * 100);
+                    chartBox.innerHTML += `
+                        <div style="margin-bottom:0.75rem;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:0.25rem;">
+                                <span>📍 ${loc}</span>
+                                <span style="font-weight:600;">${val} records</span>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.03); height:6px; border-radius:4px; overflow:hidden;">
+                                <div style="background:linear-gradient(to right, var(--accent-purple), var(--accent-blue)); width:${pct}%; height:100%; border-radius:4px;"></div>
+                            </div>
+                        </div>`;
+                });
+
+                const bar = document.getElementById("analytics-fulfillment-bar");
+                const legend = document.getElementById("analytics-fulfillment-legend");
+                if(bar && legend) {
+                    const total = CoreRegistry.items.length;
+                    const lost = CoreRegistry.items.filter(i => i.type === "Lost" && i.status === "Active").length;
+                    const found = CoreRegistry.items.filter(i => i.type === "Found" && i.status === "Active").length;
+                    const ret = CoreRegistry.items.filter(i => i.status === "Returned").length;
+
+                    if(total === 0) {
+                        bar.innerHTML = `<div style="width:100%; background:rgba(255,255,255,0.05); height:100%;"></div>`;
+                        legend.innerHTML = "No statistics data distributions mapping records available.";
+                        return;
+                    }
+
+                    const lp = (lost/total)*100, fp = (found/total)*100, rp = (ret/total)*100;
+                    bar.innerHTML = `
+                        <div class="chart-segment" style="width:${lp}%; background:var(--type-lost);"></div>
+                        <div class="chart-segment" style="width:${fp}%; background:var(--type-found);"></div>
+                        <div class="chart-segment" style="width:${rp}%; background:var(--status-returned);"></div>`;
+
+                    legend.innerHTML = `
+                        <div class="legend-node"><div class="legend-dot" style="background:var(--type-lost);"></div>Lost Active (${Math.round(lp)}%)</div>
+                        <div class="legend-node"><div class="legend-dot" style="background:var(--type-found);"></div>Found Active (${Math.round(fp)}%)</div>
+                        <div class="legend-node"><div class="legend-dot" style="background:var(--status-returned);"></div>Returned Shared (${Math.round(rp)}%)</div>`;
+                }
+
+                const catChart = document.getElementById("analytics-category-chart");
+                if(catChart) {
+                    catChart.innerHTML = "";
+                    const cats = ["Electronics", "Documents", "Keys", "Personal Effects"];
+                    cats.forEach(c => {
+                        const count = CoreRegistry.items.filter(i => i.category === c).length;
+                        catChart.innerHTML += `
+                            <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.5rem; font-size:0.8rem;">
+                                <span style="width:120px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${c}</span>
+                                <div style="flex:1; background:rgba(255,255,255,0.03); height:10px; border-radius:4px; overflow:hidden;">
+                                    <div style="background:var(--accent-purple); width:${Math.min((count/maxVal)*100, 100)}%; height:100%;"></div>
+                                </div>
+                                <span style="width:20px; text-align:right; font-weight:700;">${count}</span>
+                            </div>`;
+                    });
+                }
+            },
+
+            renderDirectory() {
+                const matrix = document.getElementById("directory-output-matrix");
+                if(!matrix) return;
+
+                const q = document.getElementById("search-query").value.toLowerCase();
+                const type = document.getElementById("search-type").value;
+                const cat = document.getElementById("search-category").value;
+                const loc = document.getElementById("search-location").value;
+                const date = document.getElementById("search-date").value;
+
+                let filtered = CoreRegistry.items;
+
+                if (q) filtered = filtered.filter(i => i.name.toLowerCase().includes(q) || i.desc.toLowerCase().includes(q) || i.owner.toLowerCase().includes(q));
+                if (type !== "ALL") filtered = filtered.filter(i => i.type === type);
+                if (cat !== "ALL") filtered = filtered.filter(i => i.category === cat);
+                if (loc !== "ALL") filtered = filtered.filter(i => i.location === loc);
+                if (date) filtered = filtered.filter(i => i.date === date);
+
+                matrix.innerHTML = "";
+                if(filtered.length === 0) {
+                    matrix.innerHTML = `<div class="null-indicator"><span class="null-icon">🍃</span>No items match the current search filters.</div>`;
+                    return;
+                }
+
+                filtered.forEach(item => {
+                    const statusPill = item.status === "Active" ? `<span class="pill pill-active">Active Track</span>` : `<span class="pill pill-returned">Returned</span>`;
+                    const actionButton = (item.status === "Active" && UserSession.currentRole !== "Student") ?
+                        `<button class="btn-prime" style="font-size:0.75rem; padding:0.4rem 0.8rem; margin-top:0.5rem;" onclick="UI.openVerificationModal(${item.id})">Complete Handover</button>` : "";
+
+                    matrix.innerHTML += `
+                        <div class="glass-card asset-card">
+                            <div class="card-banner">
+                                <img src="${item.image}" alt="Item Registry Frame">
+                                <span class="card-tag pill-${item.type.toLowerCase()}">${item.type}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="card-header-row">
+                                    <h4>${this.escape(item.name)}</h4>
+                                    ${statusPill}
+                                </div>
+                                <p class="card-text">${this.escape(item.desc)}</p>
+                                <div class="card-metadata">
+                                    <span>📍 Area: <strong>${item.location}</strong></span>
+                                    <span>📅 Date: <strong>${item.date}</strong></span>
+                                    <span>👤 Person: <strong>${this.escape(item.owner)}</strong></span>
+                                    <span>📁 Type: <strong>${item.category}</strong></span>
+                                </div>
+                                <div class="workflow-track">
+                                    <div class="workflow-step completed">Reported</div>
+                                    <div class="workflow-step ${item.status==='Active'?'active-now completed':''}">Matching</div>
+                                    <div class="workflow-step ${item.status==='Returned'?'returned-now completed':''}">Returned</div>
+                                </div>
+                                ${actionButton}
+                            </div>
+                        </div>`;
+                });
+            },
+
+            renderStudentLedger() {
+                const workspace = document.getElementById("student-workspace-matrix");
+                if(!workspace) return;
+                workspace.innerHTML = "";
+
+                if(CoreRegistry.items.length === 0) {
+                    workspace.innerHTML = `<div class="null-indicator"><span class="null-icon">📁</span>No reports filed yet.</div>`;
+                    return;
+                }
+
+                CoreRegistry.items.forEach(item => {
+                    const trackingColor = item.type === "Lost" ? "var(--type-lost)" : "var(--type-found)";
+                    const logDetails = item.verificationLog ?
+                        `<div style="margin-top:0.4rem; padding:0.4rem; background:rgba(16,185,129,0.06); border-radius:6px; font-size:0.72rem; color:var(--text-secondary);">
+                            🔒 Handover Verified By: ${this.escape(item.verificationLog.officer)} on ${item.verificationLog.timestamp} - <em>"${this.escape(item.verificationLog.notes)}"</em>
+                         </div>` : "";
+
+                    workspace.innerHTML += `
+                        <div class="glass-card" style="border-left: 4px solid ${trackingColor}; padding:1rem; display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+                            <div style="flex:1;">
+                                <div style="display:flex; align-items:center; gap:0.6rem;">
+                                    <span class="pill pill-${item.type.toLowerCase()}">${item.type}</span>
+                                    <h4 style="font-size:0.95rem;">${this.escape(item.name)}</h4>
+                                    <span class="pill pill-${item.status.toLowerCase()}">${item.status}</span>
+                                </div>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">${this.escape(item.desc)}</p>
+                                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.4rem; display:flex; gap:1rem;">
+                                    <span>Category: <strong>${item.category}</strong></span>
+                                    <span>Location: <strong>${item.location}</strong></span>
+                                    <span>Date: <strong>${item.date}</strong></span>
+                                </div>
+                                ${logDetails}
+                            </div>
+                            <img src="${item.image}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                        </div>`;
+                });
+            },
+
+            renderMatchCenter() {
+                const target = document.getElementById("match-center-output-matrix");
+                if(!target) return;
+                target.innerHTML = "";
+
+                const matches = MatchEngine.calculateMatches();
+                if(matches.length === 0) {
+                    target.innerHTML = `<div class="null-indicator"><span class="null-icon">⚡</span>No potential matches found at this time.</div>`;
+                    return;
+                }
+
+                matches.forEach(m => {
+                    const locBadge = m.matchedLocation ? `<span class="match-attr-pill matched">✔ Location Match</span>` : `<span class="match-attr-pill">✖ Different Location</span>`;
+                    const descBadge = m.matchedDescription ? `<span class="match-attr-pill matched">✔ Description Matches</span>` : `<span class="match-attr-pill">✖ Standard Details</span>`;
+
+                    target.innerHTML += `
+                        <div class="glass-card match-workspace-container">
+                            <div class="match-meta-header">
+                                <div>
+                                    <h4 style="font-size:1rem; color:#fff;">Pairing Resolution Index</h4>
+                                    <div class="match-attributes-list" style="margin-top:0.4rem;">
+                                        <span class="match-attr-pill matched">✔ Shared Category (${m.lostItem.category})</span>
+                                        ${locBadge}
+                                        ${descBadge}
+                                    </div>
+                                </div>
+                                <div class="match-confidence-badge">${m.score}% Match Score</div>
+                            </div>
+                            <div class="match-side-by-side">
+                                <div class="match-pane-side" style="border-top:3px solid var(--type-lost);">
+                                    <span class="pill pill-lost" style="font-size:0.55rem;">Lost Item</span>
+                                    <h5 style="margin:0.25rem 0; font-size:0.9rem;">${this.escape(m.lostItem.name)}</h5>
+                                    <p style="font-size:0.75rem; color:var(--text-secondary);">${this.escape(m.lostItem.desc)}</p>
+                                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.5rem;">Owner: ${this.escape(m.lostItem.owner)}</div>
+                                </div>
+                                <div class="match-pane-side" style="border-top:3px solid var(--type-found);">
+                                    <span class="pill pill-found" style="font-size:0.55rem;">Found Counterpart</span>
+                                    <h5 style="margin:0.25rem 0; font-size:0.9rem;">${this.escape(m.foundItem.name)}</h5>
+                                    <p style="font-size:0.75rem; color:var(--text-secondary);">${this.escape(m.foundItem.desc)}</p>
+                                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.5rem;">Finder: ${this.escape(m.foundItem.owner)}</div>
+                                </div>
+                            </div>
+                            ${UserSession.currentRole !== "Student" ? `
+                            <div style="display:flex; justify-content:flex-end;">
+                                <button class="btn-prime" style="font-size:0.78rem; padding:0.45rem 1rem;" onclick="UI.openVerificationModal(${m.foundItem.id})">Initiate Settlement Handover</button>
+                            </div>` : ""}
+                        </div>`;
+                });
+            },
+
+            renderLocationWorkspaceCenter() {
+                const out = document.getElementById("location-nodes-list-output");
+                if(!out) return;
+                out.innerHTML = "";
+
+                CoreRegistry.locations.forEach(loc => {
+                    const lostCount = CoreRegistry.items.filter(i => i.location === loc && i.type === "Lost" && i.status === "Active").length;
+                    const foundCount = CoreRegistry.items.filter(i => i.location === loc && i.type === "Found" && i.status === "Active").length;
+
+                    out.innerHTML += `
+                        <div class="interactive-row">
+                            <span style="font-size:0.9rem; font-weight:500;">📍 ${loc}</span>
+                            <div class="location-metric-pills">
+                                <span class="loc-pill" style="background:rgba(248,113,113,0.15); color:var(--type-lost);">${lostCount} Lost</span>
+                                <span class="loc-pill" style="background:rgba(96,165,250,0.15); color:var(--type-found);">${foundCount} Found</span>
+                            </div>
+                        </div>`;
+                });
+            },
+
+            handleCreateLocationNode() {
+                const input = document.getElementById("loc-input-node");
+                const val = input.value.trim();
+                if(!val) return;
+
+                if(CoreRegistry.locations.includes(val)){
+                    this.showToast("⚠️ Location already exists in directory.");
+                    return;
+                }
+
+                CoreRegistry.locations.push(val);
+                CoreRegistry.syncSave();
+                input.value = "";
+                this.showToast("✅ Location registered successfully.");
+                this.refreshApplicationState();
+            },
+
+            populateLocationSelectionDropdowns() {
+                const sLoc = document.getElementById("search-location");
+                const fLoc = document.getElementById("form-location");
+
+                if(sLoc) {
+                    const currentSel = sLoc.value;
+                    sLoc.innerHTML = `<option value="ALL">All Locations</option>`;
+                    CoreRegistry.locations.forEach(l => { sLoc.innerHTML += `<option value="${l}">${l}</option>`; });
+                    sLoc.value = currentSel || "ALL";
+                }
+
+                if(fLoc) {
+                    fLoc.innerHTML = "";
+                    CoreRegistry.locations.forEach(l => { fLoc.innerHTML += `<option value="${l}">${l}</option>`; });
+                }
+            },
+
+            resetDirectoryFilters() {
+                document.getElementById("search-query").value = "";
+                document.getElementById("search-type").value = "ALL";
+                document.getElementById("search-category").value = "ALL";
+                document.getElementById("search-location").value = "ALL";
+                document.getElementById("search-date").value = "";
+                this.renderDirectory();
+                this.showToast("⚡ Filters reset successfully.");
+            },
+
+            openVerificationModal(itemId) {
+                const item = CoreRegistry.items.find(i => i.id === itemId);
+                if(!item) return;
+
+                document.getElementById("modal-target-id").value = item.id;
+                document.getElementById("modal-item-title").value = item.name;
+                document.getElementById("modal-officer").value = "";
+                document.getElementById("modal-notes").value = "";
+
+                document.getElementById("verificationModal").classList.add("open");
+            },
+
+            closeVerificationModal() {
+                document.getElementById("verificationModal").classList.remove("open");
+            },
+
+            showToast(message) {
+                const space = document.getElementById("toast-space");
+                const toast = document.createElement("div");
+                toast.className = "toast-banner";
+                toast.innerHTML = `<span>${message}</span>`;
+                space.appendChild(toast);
+                setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); }, 3500);
+            },
+
+            escape(str) {
+                return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+            }
+        };
+
+        /* ON DOM CONTENT LOADING RUNTIME INITIALIZATIONS */
+        window.addEventListener('DOMContentLoaded', () => {
+            CoreRegistry.syncLoad();
+            UI.refreshApplicationState();
+        });
+    </script>
+</body>
+</html>
